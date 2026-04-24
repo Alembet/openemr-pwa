@@ -1,70 +1,181 @@
 {#
-  Main sidebar navigation.
-  Uses Stimulus `navigation` controller for active-state tracking.
-  Uses _hyperscript for trivial inline toggles.
+  Navigation principale — carte par groupe.
+  Contrôleur Stimulus `navigation` pour le suivi de l'état actif.
+  Chaque groupe = une carte Bootstrap rétractable.
 #}
-<nav class="sidebar__nav flex-grow-1 overflow-auto px-2"
+<nav class="sidebar__nav flex-grow-1 overflow-auto px-2 py-2"
      data-controller="navigation"
-     data-navigation-active-url-value="{{ app.request.pathinfo }}">
+     data-navigation-active-url-value="{{ app.request.pathinfo|default('/') }}">
 
   {% set groups = [
+
     {
-      key: 'clinical',
+      key:   'dashboard',
+      label: 'Tableau de bord',
+      icon:  'bi-speedometer2',
+      color: 'primary',
+      items: [
+        { href: '/dashboard',          icon: 'bi-house-heart',      label: 'Accueil' },
+        { href: '/dashboard/stats',    icon: 'bi-graph-up-arrow',   label: 'Statistiques' },
+        { href: '/dashboard/activity', icon: 'bi-activity',         label: 'Activité récente' },
+      ]
+    },
+
+    {
+      key:   'patients',
+      label: 'Patients',
+      icon:  'bi-people-fill',
+      color: 'info',
+      items: [
+        { href: '/patients',           icon: 'bi-person-lines-fill', label: 'Liste des patients' },
+        { href: '/patients/new',       icon: 'bi-person-plus',       label: 'Nouveau patient' },
+        { href: '/patients/search',    icon: 'bi-search-heart',      label: 'Recherche avancée' },
+        { href: '/demographics',       icon: 'bi-card-list',         label: 'Démographie' },
+      ]
+    },
+
+    {
+      key:   'clinical',
       label: 'Clinique',
-      icon: 'bi-heart-pulse',
+      icon:  'bi-heart-pulse-fill',
+      color: 'danger',
       items: [
-        { href: '/dashboard',     icon: 'bi-speedometer2',   label: 'Tableau de bord' },
-        { href: '/patients',      icon: 'bi-people',         label: 'Patients' },
-        { href: '/calendar',      icon: 'bi-calendar3',      label: 'Agenda' },
-        { href: '/encounters',    icon: 'bi-clipboard2-pulse',label: 'Consultations' },
-        { href: '/prescriptions', icon: 'bi-capsule',        label: 'Ordonnances' },
+        { href: '/encounters',         icon: 'bi-clipboard2-pulse',  label: 'Consultations' },
+        { href: '/encounters/new',     icon: 'bi-clipboard2-plus',   label: 'Nouvelle consultation' },
+        { href: '/prescriptions',      icon: 'bi-capsule',           label: 'Ordonnances' },
+        { href: '/vitals',             icon: 'bi-thermometer-half',  label: 'Constantes vitales' },
+        { href: '/allergies',          icon: 'bi-shield-exclamation','label': 'Allergies' },
+        { href: '/immunizations',      icon: 'bi-shield-plus',       label: 'Vaccinations' },
       ]
     },
+
     {
-      key: 'billing',
+      key:   'agenda',
+      label: 'Agenda',
+      icon:  'bi-calendar3',
+      color: 'success',
+      items: [
+        { href: '/calendar',           icon: 'bi-calendar-week',     label: 'Calendrier' },
+        { href: '/appointments',       icon: 'bi-calendar-plus',     label: 'Rendez-vous' },
+        { href: '/appointments/today', icon: 'bi-calendar-check',    label: "Aujourd'hui" },
+        { href: '/recalls',            icon: 'bi-bell-fill',         label: 'Rappels' },
+      ]
+    },
+
+    {
+      key:   'laboratory',
+      label: 'Laboratoire',
+      icon:  'bi-eyedropper',
+      color: 'warning',
+      items: [
+        { href: '/lab/orders',         icon: 'bi-list-check',        label: 'Demandes d\'analyses' },
+        { href: '/lab/results',        icon: 'bi-file-earmark-bar-graph', label: 'Résultats' },
+        { href: '/lab/pending',        icon: 'bi-hourglass-split',   label: 'En attente' },
+      ]
+    },
+
+    {
+      key:   'documents',
+      label: 'Documents',
+      icon:  'bi-folder2-open',
+      color: 'secondary',
+      items: [
+        { href: '/documents',          icon: 'bi-files',             label: 'Tous les documents' },
+        { href: '/documents/upload',   icon: 'bi-cloud-upload',      label: 'Importer' },
+        { href: '/reports',            icon: 'bi-file-earmark-text', label: 'Rapports médicaux' },
+        { href: '/ccda',               icon: 'bi-file-earmark-code', label: 'Dossier CDA' },
+      ]
+    },
+
+    {
+      key:   'billing',
       label: 'Facturation',
-      icon: 'bi-receipt',
+      icon:  'bi-receipt-cutoff',
+      color: 'success',
       items: [
-        { href: '/billing',   icon: 'bi-credit-card', label: 'Facturation' },
-        { href: '/reports',   icon: 'bi-bar-chart',   label: 'Rapports' },
+        { href: '/billing',            icon: 'bi-cash-stack',        label: 'Facturation' },
+        { href: '/billing/invoices',   icon: 'bi-file-earmark-check','label': 'Factures' },
+        { href: '/billing/payments',   icon: 'bi-credit-card-2-front','label': 'Paiements' },
+        { href: '/billing/insurance',  icon: 'bi-shield-check',      label: 'Assurances' },
+        { href: '/billing/reports',    icon: 'bi-bar-chart-line',    label: 'Rapports financiers' },
       ]
     },
+
     {
-      key: 'admin',
-      label: 'Administration',
-      icon: 'bi-gear',
+      key:   'messaging',
+      label: 'Messagerie',
+      icon:  'bi-chat-dots-fill',
+      color: 'info',
       items: [
-        { href: '/admin/users',    icon: 'bi-person-gear',  label: 'Utilisateurs' },
-        { href: '/admin/settings', icon: 'bi-sliders',      label: 'Paramètres' },
-        { href: '/admin/lang',     icon: 'bi-translate',    label: 'Traductions' },
+        { href: '/messages',           icon: 'bi-inbox',             label: 'Boîte de réception' },
+        { href: '/messages/new',       icon: 'bi-pencil-square',     label: 'Nouveau message' },
+        { href: '/portal',             icon: 'bi-person-badge',      label: 'Portail patient' },
+      ]
+    },
+
+    {
+      key:   'admin',
+      label: 'Administration',
+      icon:  'bi-gear-wide-connected',
+      color: 'dark',
+      items: [
+        { href: '/admin/users',        icon: 'bi-people-gear',       label: 'Utilisateurs' },
+        { href: '/admin/facilities',   icon: 'bi-building',          label: 'Établissements' },
+        { href: '/admin/settings',     icon: 'bi-sliders2',          label: 'Paramètres généraux' },
+        { href: '/admin/lang',         icon: 'bi-translate',         label: 'Traductions' },
+        { href: '/admin/backup',       icon: 'bi-cloud-arrow-down',  label: 'Sauvegarde' },
+        { href: '/admin/logs',         icon: 'bi-journal-text',      label: 'Journaux' },
       ]
     }
+
   ] %}
 
   {% for group in groups %}
-    <div class="nav-group mb-1">
+    <div class="nav-card mb-2"
+         data-group-key="{{ group.key }}"
+         _="init
+              set saved to localStorage.getItem('nav-group:{{ group.key }}')
+              if saved is '0' remove .show from the next .nav-card__body
+              end">
+
+      {# ── En-tête de la carte ─────────────────────────────────────────── #}
       <button type="button"
-              class="nav-group__toggle btn btn-link w-100 text-start px-2 py-1"
+              class="nav-card__header btn w-100 d-flex align-items-center gap-2 px-3 py-2 text-start border-0"
               data-action="click->navigation#toggleGroup"
               data-group-key="{{ group.key }}"
-              aria-expanded="true">
-        <i class="bi {{ group.icon }} me-2"></i>
-        <span class="sidebar__label">{{ group.label }}</span>
-        <i class="bi bi-chevron-down ms-auto sidebar__chevron"></i>
+              aria-expanded="true"
+              _="on click
+                   toggle .show on the next .nav-card__body
+                   set expanded to (the next .nav-card__body matches .show)
+                   set my @aria-expanded to expanded
+                   localStorage.setItem('nav-group:{{ group.key }}', expanded ? '1' : '0')">
+
+        <span class="nav-card__icon bg-{{ group.color }}-subtle text-{{ group.color }} rounded p-1 lh-1">
+          <i class="bi {{ group.icon }} fs-6"></i>
+        </span>
+        <span class="sidebar__label fw-semibold small text-truncate flex-grow-1">
+          {{ group.label }}
+        </span>
+        <i class="bi bi-chevron-down sidebar__chevron text-muted small"></i>
       </button>
-      <ul class="nav flex-column nav-group__list show ps-3">
-        {% for item in group.items %}
-          <li class="nav-item">
-            <a class="nav-link px-2 py-1 rounded"
-               href="{{ item.href }}"
-               data-navigation-target="link"
-               data-turbo-frame="_top">
-              <i class="bi {{ item.icon }} me-2"></i>
-              <span class="sidebar__label">{{ item.label }}</span>
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
+
+      {# ── Corps de la carte : liens ────────────────────────────────────── #}
+      <div class="nav-card__body show">
+        <ul class="nav flex-column px-1 pb-1">
+          {% for item in group.items %}
+            <li class="nav-item">
+              <a class="nav-link d-flex align-items-center gap-2 px-2 py-1 rounded-2"
+                 href="{{ item.href }}"
+                 data-navigation-target="link"
+                 data-turbo-frame="_top">
+                <i class="bi {{ item.icon }} nav-item__icon text-muted flex-shrink-0"></i>
+                <span class="sidebar__label small text-truncate">{{ item.label }}</span>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+
     </div>
   {% endfor %}
 

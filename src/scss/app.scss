@@ -43,19 +43,22 @@
   &:hover .sidebar__toggle { opacity: 1; }
 }
 
-// Nav groups
-.nav-group {
-  &__toggle {
-    color: var(--bs-body-color);
-    font-size: .8rem;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    opacity: .6;
+// Nav cards (groupes de navigation rétractables)
+.nav-card {
+  border-radius: var(--bs-border-radius);
+  overflow: hidden;
 
-    &:hover { opacity: 1; }
+  &__header {
+    color: var(--bs-body-color);
+    background: transparent;
+    border-radius: var(--bs-border-radius) !important;
+    transition: background .12s;
+
+    &:hover { background: var(--bs-tertiary-bg); }
 
     .sidebar__chevron {
       transition: transform .2s;
+      flex-shrink: 0;
     }
 
     &[aria-expanded="false"] .sidebar__chevron {
@@ -63,10 +66,24 @@
     }
   }
 
-  &__list {
-    display: none;
-    &.show { display: flex; }
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
   }
+
+  &__body {
+    display: none;
+    &.show { display: block; }
+  }
+}
+
+.nav-item__icon {
+  width: 1rem;
+  text-align: center;
 }
 
 .nav-link {
