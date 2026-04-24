@@ -5,7 +5,6 @@
   "license": "GPL-3.0-or-later",
   "require": {
     "php": "^8.2",
-    "openemr/openemr": "dev-master",
     "twig/twig": "^3.22",
     "laminas/laminas-diactoros": "^3.5",
     "laminas/laminas-httphandlerrunner": "^2.12",
@@ -22,6 +21,6 @@
     }
   },
   "scripts": {
-    "serve": "php -S localhost:8300 -t public public/index.php"
+    "serve": "php -S localhost:8301 -t public"
   }
 }

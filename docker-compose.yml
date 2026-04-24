@@ -1,8 +1,45 @@
 services:
 
+  # ── PHP front controller — serves Twig templates at :8301 ─────────────────
+  pwa:
+    image: php:8.2-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - pwa_vendor:/app/vendor   # cache Composer deps across restarts
+    ports:
+      - "8301:8301"
+    # Download Composer on first run if vendor/ is absent, then start PHP server
+    command: >
+      sh -c "
+        [ -f /app/vendor/autoload.php ] || (
+          echo '[pwa] Installing Composer dependencies...' &&
+          wget -qO /tmp/composer.phar https://getcomposer.org/download/latest-stable/composer.phar &&
+          php /tmp/composer.phar install --no-dev --no-interaction --prefer-dist --working-dir=/app
+        ) &&
+        echo '[pwa] PHP server ready at http://localhost:8301' &&
+        php -S 0.0.0.0:8301 -t /app/public
+      "
+
+  # ── Vite dev server — HMR at :5173, proxies HTML to pwa:8301 ──────────────
+  node:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_PHP_HOST=pwa      # tells Vite proxy to forward to the pwa container
+    depends_on:
+      - pwa
+
+  # ── phpMyAdmin (optional, for DB inspection) ──────────────────────────────
   mysql:
     image: mariadb:11.8
-    restart: always
+    restart: unless-stopped
     ports:
       - "8321:3306"
     environment:
@@ -19,43 +56,9 @@ services:
       timeout: 5s
       retries: 3
 
-  php:
-    image: openemr/openemr:flex
-    restart: always
-    ports:
-      - "8301:80"
-      - "9301:443"
-    volumes:
-      - .:/var/www/localhost/htdocs/openemr-pwa:rw
-      # Re-use the main OpenEMR source as read-only base
-      - ../openemr:/var/www/localhost/htdocs/openemr:ro
-    environment:
-      MYSQL_HOST: mysql
-      MYSQL_ROOT_PASS: root
-      MYSQL_USER: openemr
-      MYSQL_PASS: openemr
-      OE_USER: admin
-      OE_PASS: pass
-      EASY_DEV_MODE: "yes"
-      OPENEMR_SETTING_language_default: "French (Standard)"
-    depends_on:
-      mysql:
-        condition: service_healthy
-
-  node:
-    image: node:22-alpine
-    working_dir: /app
-    volumes:
-      - .:/app
-    command: sh -c "npm install && npm run dev -- --host"
-    ports:
-      - "5173:5173"
-    environment:
-      - NODE_ENV=development
-
   phpmyadmin:
     image: phpmyadmin
-    restart: always
+    restart: unless-stopped
     ports:
       - "8311:80"
     environment:
@@ -66,3 +69,4 @@ services:
 
 volumes:
   db_data: {}
+  pwa_vendor: {}

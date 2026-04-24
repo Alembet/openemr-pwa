@@ -50,9 +50,10 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      // Proxy all non-asset requests to the PHP backend
+      // Proxy all non-asset requests to the PHP backend.
+      // VITE_PHP_HOST is 'pwa' when running inside Docker Compose, 'localhost' otherwise.
       '^(?!/dist/).*': {
-        target: 'http://localhost:8300',
+        target: `http://${process.env.VITE_PHP_HOST ?? 'localhost'}:8301`,
         changeOrigin: true,
       },
     },

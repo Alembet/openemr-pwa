@@ -16,7 +16,13 @@
   {# Turbo: mark the page title as permanent so it updates correctly #}
   <title id="page-title">{{ title|default('OpenEMR') }}</title>
 
-  {# Vite assets — replaced by vite:asset() helper in PHP #}
+  {# Bootstrap Icons (standalone package, not bundled in SCSS) #}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  {# Vite assets — replaced by vite_asset() helper in PHP #}
+  {% if vite_dev %}
+    <script type="module" src="{{ vite_origin }}/@vite/client"></script>
+  {% endif %}
   <link rel="stylesheet" href="{{ vite_asset('src/scss/app.scss') }}">
 
   {% block head %}{% endblock %}

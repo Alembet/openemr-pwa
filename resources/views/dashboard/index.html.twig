@@ -1,0 +1,61 @@
+{% extends 'layouts/base.html.twig' %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <h1 class="h4 mb-4">Tableau de bord</h1>
+
+  {# ── KPI cards ──────────────────────────────────────────────────────────── #}
+  <div class="row g-3 mb-4">
+    {% set kpis = [
+      { color: 'primary', icon: 'bi-people-fill',     label: 'Patients',                value: '—' },
+      { color: 'success', icon: 'bi-calendar-check',  label: "Rendez-vous aujourd'hui", value: '—' },
+      { color: 'warning', icon: 'bi-clipboard2-pulse', label: 'Consultations du jour',  value: '—' },
+      { color: 'info',    icon: 'bi-receipt-cutoff',  label: 'Factures en attente',     value: '—' },
+    ] %}
+
+    {% for kpi in kpis %}
+      <div class="col-sm-6 col-xl-3">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body d-flex align-items-center gap-3">
+            <span class="bg-{{ kpi.color }}-subtle text-{{ kpi.color }} rounded-3 p-3 fs-2 lh-1 flex-shrink-0">
+              <i class="bi {{ kpi.icon }}"></i>
+            </span>
+            <div>
+              <div class="fs-3 fw-bold lh-1 mb-1">{{ kpi.value }}</div>
+              <div class="text-muted small">{{ kpi.label }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# ── Quick actions ──────────────────────────────────────────────────────── #}
+  <div class="row g-3">
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent border-bottom fw-semibold">
+          <i class="bi bi-clock-history me-2 text-primary"></i>Activité récente
+        </div>
+        <div class="card-body text-center text-muted py-5">
+          <i class="bi bi-inbox fs-1 opacity-25 d-block mb-2"></i>
+          Aucune activité récente
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent border-bottom fw-semibold">
+          <i class="bi bi-calendar-week me-2 text-success"></i>Prochains rendez-vous
+        </div>
+        <div class="card-body text-center text-muted py-5">
+          <i class="bi bi-calendar-x fs-1 opacity-25 d-block mb-2"></i>
+          Aucun rendez-vous à venir
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
