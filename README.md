@@ -24,13 +24,14 @@ Fork of [OpenEMR](https://github.com/openemr/openemr) rewritten as a **Progressi
 ```
 openemr-pwa/
 ├── public/
-│   ├── manifest.json          # PWA manifest (installable, shortcuts)
-│   └── dist/                  # Vite build output (hashed assets + sw.js)
+│   ├── manifest.json              # PWA manifest (installable, shortcuts)
+│   └── dist/                      # Vite build output (hashed assets + sw.js)
 ├── src/
 │   ├── js/
-│   │   ├── app.js             # Entry: Turbo + htmx + Stimulus + hyperscript + PWA SW
-│   │   └── controllers/       # Stimulus controllers
-│   │       ├── index.js           # Registry
+│   │   ├── app.js                 # Full entry: Turbo + htmx + Stimulus + hyperscript + SW
+│   │   ├── inject.js              # Lightweight entry injected into existing OpenEMR
+│   │   └── controllers/           # Stimulus controllers
+│   │       ├── index.js               # Registry (custom + Stimulus Components)
 │   │       ├── navigation_controller.js
 │   │       ├── search_controller.js
 │   │       ├── sidebar_controller.js
@@ -40,24 +41,25 @@ openemr-pwa/
 │   │       ├── autocomplete_controller.js
 │   │       └── print_controller.js
 │   ├── scss/
-│   │   ├── app.scss           # Bootstrap 5 + sidebar + dark mode + print
+│   │   ├── app.scss               # Bootstrap 5 + sidebar + dark mode + print
 │   │   └── _variables.scss
-│   └── sw.js                  # Workbox service worker source
+│   └── sw.js                      # Workbox service worker source
 ├── resources/views/
 │   ├── layouts/
-│   │   ├── base.html.twig     # Base layout: sidebar + topbar + toast container
-│   │   └── _nav.html.twig     # Sidebar navigation groups
+│   │   ├── base.html.twig         # Base layout: sidebar + topbar + toast container
+│   │   └── _nav.html.twig         # Sidebar navigation groups
 │   └── patients/
-│       ├── index.html.twig    # Patient list: Turbo Frame table + htmx actions
-│       ├── show.html.twig     # Patient detail: lazy Bootstrap tabs via Turbo Frames
+│       ├── index.html.twig        # Patient list: Turbo Frame table + htmx actions
+│       ├── show.html.twig         # Patient detail: lazy Bootstrap tabs via Turbo Frames
 │       └── _stream_create.html.twig  # Turbo Stream: prepend row + toast on create
 ├── src/php/
 │   ├── Controllers/
-│   │   └── PatientController.php   # Handles Turbo/htmx/Stream variants
+│   │   └── PatientController.php  # Handles Turbo / htmx / Stream response variants
 │   └── Middleware/
-│       └── TurboMiddleware.php     # Detects Turbo-Frame / HX-Request headers
-├── docker-compose.yml         # PHP + MariaDB + Node (Vite) + phpMyAdmin
-├── vite.config.js
+│       └── TurboMiddleware.php    # Detects Turbo-Frame / HX-Request headers
+├── vite.config.js                 # Main Vite config (app + styles + PWA)
+├── vite.inject.config.js          # IIFE bundle config for inject.js
+├── docker-compose.yml             # PHP + MariaDB + Node (Vite) + phpMyAdmin
 ├── package.json
 └── composer.json
 ```
@@ -68,11 +70,14 @@ openemr-pwa/
 # Install frontend dependencies
 npm install
 
-# Dev server (Vite on :5173, proxies PHP to :8300)
+# Dev server — Vite HMR on :5173, proxies PHP to :8300
 npm run dev
 
-# Production build
+# Production build (app + PWA service worker)
 npm run build
+
+# Inject bundle — self-contained IIFE for existing OpenEMR (see below)
+npm run build:inject
 ```
 
 ### With Docker
@@ -88,6 +93,64 @@ docker compose up --detach
 | Vite dev | http://localhost:5173 |
 
 **Default credentials:** `admin` / `pass`
+
+---
+
+## Injecting into an existing OpenEMR instance
+
+`inject.js` is a **self-contained IIFE bundle** (~459 KB, all dependencies inlined) that loads
+Stimulus, htmx, and _hyperscript into the existing OpenEMR UI without touching Turbo Drive
+(which would break OpenEMR's iframe-based tab navigation).
+
+### 1 — Build the inject bundle
+
+```bash
+npm run build:inject
+```
+
+This outputs `../openemr/public/openemr-pwa/inject.js` — served from the **same origin** as
+OpenEMR so there are no CORS or cross-origin module issues.
+
+### 2 — The script tag is already wired in
+
+`interface/main/tabs/main.php` already contains the injection snippet:
+
+```php
+<?php if (file_exists(__DIR__ . '/../../../public/openemr-pwa/inject.js')) : ?>
+    <script src="<?php echo $web_root; ?>/public/openemr-pwa/inject.js"></script>
+<?php endif; ?>
+```
+
+The script tag is only rendered when the built file is present — **removing the file disables the injection**.
+
+### 3 — Verify it loaded
+
+Open **<http://localhost:8300>**, log in, open DevTools console (F12):
+
+```text
+[openemr-pwa] Stimulus + htmx + _hyperscript injected ✓
+```
+
+### What `inject.js` activates
+
+| Feature | How to use |
+|---|---|
+| **Stimulus controller** | Add `data-controller="sidebar"` (or any registered controller) to any element |
+| **htmx** | Add `hx-get`, `hx-post`, `hx-delete`, etc. to any element |
+| **_hyperscript** | Add `_="on click toggle .d-none on #target"` to any element |
+| **Bootstrap 5 tooltips** | Add `data-bs5-tooltip` to any element (coexists with BS4) |
+
+### Rebuild after changes
+
+Every time you edit `src/js/inject.js` or its controllers, run:
+
+```bash
+npm run build:inject
+```
+
+The updated file is written directly into the OpenEMR public directory and takes effect on the next page load (no container restart needed).
+
+---
 
 ## Key Patterns
 
@@ -127,6 +190,8 @@ export default class extends Controller {
   // …
 }
 ```
+
+---
 
 ## PWA Features
 

@@ -9,11 +9,13 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       input: {
-        app: 'src/js/app.js',
+        app:    'src/js/app.js',
+        inject: 'src/js/inject.js',
         styles: 'src/scss/app.scss',
       },
     },
   },
+
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
