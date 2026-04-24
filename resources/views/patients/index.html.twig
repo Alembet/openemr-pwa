@@ -1,0 +1,239 @@
+{% extends 'layouts/base.html.twig' %}
+{% set title = 'Patients — OpenEMR' %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h1 class="h4 mb-0">Patients</h1>
+
+  {# _hyperscript: toggle new-patient form inline without a controller #}
+  <button class="btn btn-primary btn-sm"
+          _="on click toggle .d-none on #new-patient-form
+             then if #new-patient-form matches .d-none
+               set my innerHTML to '<i class=\'bi bi-plus-lg me-1\'></i>Nouveau patient'
+             else
+               set my innerHTML to '<i class=\'bi bi-x-lg me-1\'></i>Annuler'
+             end">
+    <i class="bi bi-plus-lg me-1"></i>Nouveau patient
+  </button>
+</div>
+
+{# ── Inline new-patient form (Turbo Frame → stays in-page) ────────────────── #}
+<turbo-frame id="new-patient-form" class="d-none">
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Nouveau patient</h5>
+      {#
+        data-turbo="true" + action pointing to /patients → server responds with
+        a Turbo Stream that prepends the new row and clears the form.
+      #}
+      <form action="/patients" method="post"
+            data-turbo="true"
+            data-controller="auto-submit"
+            class="row g-3">
+        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+
+        <div class="col-md-3">
+          <label class="form-label">Prénom</label>
+          <input name="fname" type="text" class="form-control form-control-sm"
+                 required data-controller="textarea-autogrow">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Nom</label>
+          <input name="lname" type="text" class="form-control form-control-sm" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Date de naissance</label>
+          <input name="dob" type="date" class="form-control form-control-sm" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Sexe</label>
+          <select name="sex" class="form-select form-select-sm" required>
+            <option value="">—</option>
+            <option value="M">Masculin</option>
+            <option value="F">Féminin</option>
+            <option value="O">Autre</option>
+          </select>
+        </div>
+
+        {# Autocomplete for referring doctor #}
+        <div class="col-md-2"
+             data-controller="autocomplete"
+             data-autocomplete-url-value="/api/providers/search">
+          <label class="form-label">Médecin référent</label>
+          <input type="text" class="form-control form-control-sm"
+                 placeholder="Rechercher…"
+                 data-autocomplete-target="input"
+                 data-action="input->autocomplete#onInput keydown->autocomplete#onKeydown">
+          <input type="hidden" name="provider_id" data-autocomplete-target="hidden">
+          <ul class="autocomplete-list list-unstyled position-absolute bg-white border rounded shadow-sm"
+              data-autocomplete-target="list" hidden></ul>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
+          <button type="reset" class="btn btn-outline-secondary btn-sm"
+                  _="on click trigger click on the previous <button/>">
+            Annuler
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</turbo-frame>
+
+{# ── Patient list table ────────────────────────────────────────────────────── #}
+<div class="card">
+  <div class="card-header d-flex align-items-center gap-3 py-2">
+    <input type="search" class="form-control form-control-sm w-auto"
+           placeholder="Filtrer…"
+           data-controller="datatable"
+           data-action="input->datatable#filter"
+           data-datatable-target="filter">
+
+    {#
+      htmx: export button — server returns file download response.
+      hx-indicator shows a spinner during the request.
+    #}
+    <button class="btn btn-outline-secondary btn-sm ms-auto"
+            hx-get="/patients/export.csv"
+            hx-indicator="#export-spinner">
+      <span class="spinner-border spinner-border-sm d-none" id="export-spinner"></span>
+      <i class="bi bi-download me-1"></i>Exporter CSV
+    </button>
+
+    <button class="btn btn-outline-secondary btn-sm"
+            data-controller="print"
+            data-action="click->print#print"
+            data-print-selector-value="#patients-table">
+      <i class="bi bi-printer me-1"></i>Imprimer
+    </button>
+  </div>
+
+  <div class="table-responsive">
+    {#
+      Turbo Frame wraps the table.
+      Pagination links inside this frame navigate within it only.
+      htmx hx-get is used for column sorting (server-side).
+    #}
+    <turbo-frame id="patients-table">
+      <table class="table table-hover table-sm mb-0"
+             data-controller="datatable">
+        <thead class="table-light sticky-top">
+          <tr>
+            <th>
+              <button class="btn btn-link p-0 fw-semibold text-decoration-none"
+                      data-action="click->datatable#sort"
+                      data-datatable-target="sortBtn"
+                      data-col="0"
+                      aria-sort="none">
+                Nom <i class="bi bi-arrow-down-up ms-1 small opacity-50"></i>
+              </button>
+            </th>
+            <th>
+              <button class="btn btn-link p-0 fw-semibold text-decoration-none"
+                      data-action="click->datatable#sort"
+                      data-datatable-target="sortBtn"
+                      data-col="1"
+                      aria-sort="none">
+                Date de naissance
+              </button>
+            </th>
+            <th>Sexe</th>
+            <th>Téléphone</th>
+            <th>Dernier RDV</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for patient in patients %}
+            <tr data-datatable-target="row">
+              <td>
+                <a href="/patients/{{ patient.pid }}"
+                   class="fw-medium text-decoration-none"
+                   data-turbo-frame="_top">
+                  {{ patient.lname }}, {{ patient.fname }}
+                </a>
+                <small class="text-muted d-block">{{ patient.pid }}</small>
+              </td>
+              <td>{{ patient.dob|date('d/m/Y') }}</td>
+              <td>
+                <span class="badge bg-{{ patient.sex == 'M' ? 'primary' : (patient.sex == 'F' ? 'danger' : 'secondary') }}-subtle
+                                   text-{{ patient.sex == 'M' ? 'primary' : (patient.sex == 'F' ? 'danger' : 'secondary') }}">
+                  {{ patient.sex == 'M' ? 'M' : (patient.sex == 'F' ? 'F' : 'Autre') }}
+                </span>
+              </td>
+              <td>{{ patient.phone_cell|default(patient.phone_home)|default('—') }}</td>
+              <td>{{ patient.last_visit|date('d/m/Y')|default('—') }}</td>
+              <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                  <a class="btn btn-outline-secondary"
+                     href="/patients/{{ patient.pid }}"
+                     data-turbo-frame="_top"
+                     title="Voir">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  {#
+                    htmx: quick-edit inline — server returns
+                    hx-swap="outerHTML" with the updated row.
+                  #}
+                  <button class="btn btn-outline-secondary"
+                          hx-get="/patients/{{ patient.pid }}/edit-row"
+                          hx-target="closest tr"
+                          hx-swap="outerHTML"
+                          title="Modifier">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  {#
+                    _hyperscript: confirm before htmx DELETE
+                  #}
+                  <button class="btn btn-outline-danger"
+                          hx-delete="/patients/{{ patient.pid }}"
+                          hx-target="closest tr"
+                          hx-swap="outerHTML swap:500ms"
+                          hx-confirm="Supprimer ce patient ?"
+                          title="Supprimer"
+                          _="on htmx:afterRequest if event.detail.successful add .table-danger to closest tr end">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr data-datatable-target="empty">
+              <td colspan="6" class="text-center text-muted py-4">Aucun patient trouvé</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {# Pagination (inside the Turbo Frame — clicks don't reload the page) #}
+      {% if pagination.total_pages > 1 %}
+        <nav class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <small class="text-muted">
+            {{ pagination.from }}–{{ pagination.to }} sur {{ pagination.total }} patients
+          </small>
+          <ul class="pagination pagination-sm mb-0">
+            {% if pagination.prev %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ pagination.prev }}">‹</a>
+              </li>
+            {% endif %}
+            {% for page in pagination.pages %}
+              <li class="page-item {{ page == pagination.current ? 'active' : '' }}">
+                <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+              </li>
+            {% endfor %}
+            {% if pagination.next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ pagination.next }}">›</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+    </turbo-frame>
+  </div>
+</div>
+{% endblock %}

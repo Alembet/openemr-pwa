@@ -1,0 +1,136 @@
+{% extends 'layouts/base.html.twig' %}
+{% set title = patient.lname ~ ', ' ~ patient.fname ~ ' — OpenEMR' %}
+
+{% block content %}
+<div class="d-flex align-items-start gap-3 mb-4">
+  <a href="/patients" class="btn btn-outline-secondary btn-sm"
+     data-turbo-frame="_top">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <div>
+    <h1 class="h4 mb-0">{{ patient.fname }} {{ patient.lname }}</h1>
+    <small class="text-muted">IPP {{ patient.pid }} · Né(e) le {{ patient.dob|date('d/m/Y') }}</small>
+  </div>
+  <div class="ms-auto d-flex gap-2">
+    <button class="btn btn-outline-secondary btn-sm"
+            data-controller="print"
+            data-action="click->print#print">
+      <i class="bi bi-printer me-1"></i>Imprimer
+    </button>
+    <a href="/patients/{{ patient.pid }}/edit" class="btn btn-primary btn-sm">
+      <i class="bi bi-pencil me-1"></i>Modifier
+    </a>
+  </div>
+</div>
+
+{#
+  Tabs powered by Bootstrap + Turbo Frames.
+  Each tab pane is a separate Turbo Frame — content loads lazily on first click.
+#}
+<ul class="nav nav-tabs mb-0" id="patient-tabs" role="tablist"
+    _="on click(event) from <.nav-link/>
+         set target to event.target.closest('.nav-link')
+         if target exists
+           set url to target.getAttribute('data-turbo-src')
+           if url exists
+             set frame to document.querySelector('#' + target.getAttribute('data-frame'))
+             if frame and not frame.querySelector('[data-loaded]')
+               set frame.src to url
+             end
+           end
+         end">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-info"
+            data-frame="tab-info">
+      <i class="bi bi-person me-1"></i>Informations
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-encounters"
+            data-frame="tab-encounters"
+            data-turbo-src="/patients/{{ patient.pid }}/encounters">
+      <i class="bi bi-clipboard2-pulse me-1"></i>Consultations
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-prescriptions"
+            data-frame="tab-prescriptions"
+            data-turbo-src="/patients/{{ patient.pid }}/prescriptions">
+      <i class="bi bi-capsule me-1"></i>Ordonnances
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-documents"
+            data-frame="tab-documents"
+            data-turbo-src="/patients/{{ patient.pid }}/documents">
+      <i class="bi bi-folder2 me-1"></i>Documents
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content border border-top-0 rounded-bottom p-4">
+
+  {# Tab 1 — Patient info (already loaded, no lazy fetch needed) #}
+  <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+    <turbo-frame id="tab-info" data-loaded>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <h6 class="text-muted text-uppercase small mb-3">Coordonnées</h6>
+          <dl class="row mb-0">
+            <dt class="col-5 text-muted">Téléphone</dt>
+            <dd class="col-7">{{ patient.phone_cell|default('—') }}</dd>
+            <dt class="col-5 text-muted">Email</dt>
+            <dd class="col-7">{{ patient.email|default('—') }}</dd>
+            <dt class="col-5 text-muted">Adresse</dt>
+            <dd class="col-7">{{ patient.street|default('') }} {{ patient.city|default('') }}</dd>
+          </dl>
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-muted text-uppercase small mb-3">Données cliniques</h6>
+          <dl class="row mb-0">
+            <dt class="col-5 text-muted">Groupe sanguin</dt>
+            <dd class="col-7">{{ patient.blood_type|default('—') }}</dd>
+            <dt class="col-5 text-muted">Allergies</dt>
+            <dd class="col-7">
+              {#
+                htmx: load allergies on demand, cache in the DOM.
+              #}
+              <span hx-get="/patients/{{ patient.pid }}/allergies"
+                    hx-trigger="intersect once"
+                    hx-swap="outerHTML">
+                <span class="placeholder col-6"></span>
+              </span>
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </turbo-frame>
+  </div>
+
+  {# Tabs 2–4 — lazy Turbo Frames #}
+  <div class="tab-pane fade" id="tab-encounters" role="tabpanel">
+    <turbo-frame id="tab-encounters">
+      <div class="text-center text-muted py-4">
+        <div class="spinner-border spinner-border-sm me-2"></div>Chargement…
+      </div>
+    </turbo-frame>
+  </div>
+
+  <div class="tab-pane fade" id="tab-prescriptions" role="tabpanel">
+    <turbo-frame id="tab-prescriptions">
+      <div class="text-center text-muted py-4">
+        <div class="spinner-border spinner-border-sm me-2"></div>Chargement…
+      </div>
+    </turbo-frame>
+  </div>
+
+  <div class="tab-pane fade" id="tab-documents" role="tabpanel">
+    <turbo-frame id="tab-documents">
+      <div class="text-center text-muted py-4">
+        <div class="spinner-border spinner-border-sm me-2"></div>Chargement…
+      </div>
+    </turbo-frame>
+  </div>
+
+</div>
+{% endblock %}

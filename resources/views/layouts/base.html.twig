@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="{{ app.locale|default('fr') }}"
+      data-bs-theme="{{ user.theme|default('light') }}"
+      data-controller="theme">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="description" content="OpenEMR — Dossier Médical Électronique">
+
+  {# PWA #}
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1a6ea0">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+  {# Turbo: mark the page title as permanent so it updates correctly #}
+  <title id="page-title">{{ title|default('OpenEMR') }}</title>
+
+  {# Vite assets — replaced by vite:asset() helper in PHP #}
+  <link rel="stylesheet" href="{{ vite_asset('src/scss/app.scss') }}">
+
+  {% block head %}{% endblock %}
+</head>
+
+{#
+  data-turbo-permanent on nav + sidebar → Turbo Drive does NOT replace them
+  on navigation, keeping the sidebar state across pages.
+#}
+<body class="d-flex">
+
+  {# ── Sidebar ──────────────────────────────────────────────────────────── #}
+  <aside id="sidebar"
+         class="sidebar d-flex flex-column flex-shrink-0"
+         data-turbo-permanent
+         data-controller="sidebar"
+         data-sidebar-collapsed-class="sidebar--collapsed">
+
+    <div class="sidebar__brand px-3 py-2 d-flex align-items-center gap-2">
+      <img src="/icons/icon-192.png" width="32" alt="OpenEMR">
+      <span class="sidebar__brand-text fw-semibold">OpenEMR</span>
+      <button class="btn btn-link ms-auto p-0 text-reset sidebar__toggle"
+              data-action="click->sidebar#toggle"
+              aria-label="Réduire la barre latérale">
+        <i class="bi bi-layout-sidebar"></i>
+      </button>
+    </div>
+
+    {% include 'layouts/_nav.html.twig' %}
+
+    {# Theme toggle at bottom #}
+    <div class="mt-auto p-3 border-top">
+      <button class="btn btn-outline-secondary btn-sm w-100"
+              data-action="click->theme#toggle">
+        <i class="bi bi-moon-stars-fill" data-theme-target="icon"></i>
+        <span class="sidebar__label ms-1">Thème</span>
+      </button>
+    </div>
+  </aside>
+
+  {# ── Main area ────────────────────────────────────────────────────────── #}
+  <div class="main-wrapper d-flex flex-column flex-grow-1 overflow-hidden">
+
+    {# ── Top bar ──────────────────────────────────────────────────────── #}
+    <header class="topbar d-flex align-items-center px-3 py-2 border-bottom"
+            data-turbo-permanent id="topbar">
+
+      {# Mobile hamburger #}
+      <button class="btn btn-link d-lg-none me-2"
+              data-action="click->navigation#toggleDrawer"
+              aria-label="Menu">
+        <i class="bi bi-list fs-4"></i>
+      </button>
+
+      {# Global search #}
+      <div class="flex-grow-1 mx-lg-3"
+           data-controller="search"
+           data-search-url-value="/api/search"
+           data-search-min-length-value="2">
+        <div class="position-relative">
+          <input type="search" class="form-control form-control-sm"
+                 placeholder="Rechercher patient, rendez-vous…"
+                 data-search-target="input"
+                 data-action="input->search#onInput keydown->search#onKeydown"
+                 aria-label="Recherche globale">
+          <div class="spinner-border spinner-border-sm position-absolute top-50 end-0 translate-middle-y me-2 d-none"
+               data-search-target="spinner" aria-hidden="true"></div>
+        </div>
+        {# Turbo Frame receives search results fragment from server #}
+        <turbo-frame id="search-results"
+                     data-search-target="results"
+                     class="search-results-frame"
+                     hidden>
+        </turbo-frame>
+      </div>
+
+      {# Notifications bell #}
+      <div class="dropdown ms-2">
+        <button class="btn btn-link position-relative" data-bs-toggle="dropdown"
+                aria-label="Notifications">
+          <i class="bi bi-bell fs-5"></i>
+          {% if notification_count > 0 %}
+            <span class="badge bg-danger rounded-pill position-absolute top-0 end-0">
+              {{ notification_count }}
+            </span>
+          {% endif %}
+        </button>
+        <div class="dropdown-menu dropdown-menu-end p-0" style="width:320px">
+          {# htmx: load notifications on dropdown open, no extra route needed #}
+          <div hx-get="/api/notifications"
+               hx-trigger="intersect once"
+               hx-target="this"
+               hx-swap="innerHTML">
+            <div class="p-3 text-center text-muted small">Chargement…</div>
+          </div>
+        </div>
+      </div>
+
+      {# User menu #}
+      <div class="dropdown ms-2">
+        <button class="btn btn-link d-flex align-items-center gap-2"
+                data-bs-toggle="dropdown" aria-label="Compte utilisateur">
+          <span class="avatar avatar-sm">{{ user.initials }}</span>
+          <span class="d-none d-md-inline small">{{ user.name }}</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="/profile">Mon profil</a></li>
+          <li><a class="dropdown-item" href="/admin">Administration</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <a class="dropdown-item text-danger"
+               href="/logout"
+               data-turbo-method="delete">Déconnexion</a>
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    {# ── Flash messages (populated by Turbo Streams) ──────────────────── #}
+    <div id="toasts" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:1100">
+      {% for flash in flashes %}
+        <div class="toast show align-items-center text-bg-{{ flash.type }} border-0"
+             role="alert" aria-live="assertive"
+             data-controller="notification"
+             data-notification-delay-value="5000">
+          <div class="d-flex">
+            <div class="toast-body">{{ flash.message }}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                    data-action="click->notification#dismiss"></button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {# ── Page content ─────────────────────────────────────────────────── #}
+    <main id="main-content" class="flex-grow-1 overflow-auto p-4">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>{# /.main-wrapper #}
+
+  <script type="module" src="{{ vite_asset('src/js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

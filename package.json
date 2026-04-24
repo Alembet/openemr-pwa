@@ -1,0 +1,32 @@
+{
+  "name": "openemr-pwa",
+  "version": "1.0.0",
+  "description": "OpenEMR fork — PWA rewrite with Turbo, Stimulus, htmx, _hyperscript",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo": "^8.0.12",
+    "@stimulus-components/auto-submit": "^6.0.0",
+    "@stimulus-components/clipboard": "^5.0.0",
+    "@stimulus-components/dialog": "^1.0.1",
+    "@stimulus-components/dropdown": "^3.0.0",
+    "@stimulus-components/notification": "^3.0.0",
+    "@stimulus-components/read-more": "^5.0.0",
+    "@stimulus-components/reveal": "^5.0.0",
+    "@stimulus-components/sortable": "^5.0.3",
+    "bootstrap": "^5.3.3",
+    "htmx.org": "^2.0.4",
+    "hyperscript.org": "^0.9.14",
+    "workbox-window": "^7.3.0"
+  },
+  "devDependencies": {
+    "sass": "^1.80.0",
+    "vite": "^5.4.0",
+    "vite-plugin-pwa": "^0.20.0"
+  }
+}

@@ -1,0 +1,52 @@
+{#
+  Turbo Stream response after creating a patient.
+  Prepends the new row to the table body and collapses the form.
+#}
+
+{# 1. Prepend new row to the tbody inside the patients-table frame #}
+<turbo-stream action="prepend" target="patients-table">
+  <template>
+    <tr data-datatable-target="row">
+      <td>
+        <a href="/patients/{{ patient.pid }}" class="fw-medium text-decoration-none"
+           data-turbo-frame="_top">
+          {{ patient.lname }}, {{ patient.fname }}
+        </a>
+        <small class="text-muted d-block">{{ patient.pid }}</small>
+      </td>
+      <td>{{ patient.dob|date('d/m/Y') }}</td>
+      <td>{{ patient.sex }}</td>
+      <td>{{ patient.phone_cell|default('—') }}</td>
+      <td>—</td>
+      <td class="text-end">
+        <a class="btn btn-outline-secondary btn-sm" href="/patients/{{ patient.pid }}" data-turbo-frame="_top">
+          <i class="bi bi-eye"></i>
+        </a>
+      </td>
+    </tr>
+  </template>
+</turbo-stream>
+
+{# 2. Collapse the form frame #}
+<turbo-stream action="update" target="new-patient-form">
+  <template></template>
+</turbo-stream>
+
+{# 3. Show a success toast #}
+<turbo-stream action="append" target="toasts">
+  <template>
+    <div class="toast show align-items-center text-bg-success border-0"
+         role="alert" aria-live="assertive"
+         data-controller="notification"
+         data-notification-delay-value="4000">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-check-circle me-1"></i>
+          Patient <strong>{{ patient.fname }} {{ patient.lname }}</strong> créé avec succès.
+        </div>
+        <button class="btn-close btn-close-white me-2 m-auto"
+                data-action="click->notification#dismiss"></button>
+      </div>
+    </div>
+  </template>
+</turbo-stream>

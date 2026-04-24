@@ -1,0 +1,176 @@
+// ─── Bootstrap 5 + custom tokens ─────────────────────────────────────────────
+@use 'variables' as *;
+@use 'bootstrap/scss/bootstrap';
+
+// ─── Turbo progress bar ───────────────────────────────────────────────────────
+.turbo-progress-bar {
+  height: 3px;
+  background: var(--bs-primary);
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+:root {
+  --sidebar-width:          240px;
+  --sidebar-collapsed-width: 60px;
+  --sidebar-bg:             var(--bs-body-bg);
+  --sidebar-border:         var(--bs-border-color);
+  --topbar-height:          52px;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  min-height: 100dvh;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  transition: width .2s ease;
+  overflow: hidden;
+
+  &--collapsed {
+    width: var(--sidebar-collapsed-width);
+
+    .sidebar__label,
+    .sidebar__brand-text,
+    .sidebar__chevron { display: none; }
+  }
+
+  &__brand { min-height: var(--topbar-height); }
+
+  &__toggle {
+    opacity: 0;
+    transition: opacity .15s;
+  }
+
+  &:hover .sidebar__toggle { opacity: 1; }
+}
+
+// Nav groups
+.nav-group {
+  &__toggle {
+    color: var(--bs-body-color);
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    opacity: .6;
+
+    &:hover { opacity: 1; }
+
+    .sidebar__chevron {
+      transition: transform .2s;
+    }
+
+    &[aria-expanded="false"] .sidebar__chevron {
+      transform: rotate(-90deg);
+    }
+  }
+
+  &__list {
+    display: none;
+    &.show { display: flex; }
+  }
+}
+
+.nav-link {
+  font-size: .875rem;
+  color: var(--bs-body-color);
+  transition: background .12s, color .12s;
+
+  &:hover  { background: var(--bs-tertiary-bg); color: var(--bs-primary); }
+  &.active { background: var(--bs-primary-bg-subtle); color: var(--bs-primary); font-weight: 500; }
+}
+
+// ─── Topbar ───────────────────────────────────────────────────────────────────
+.topbar {
+  min-height: var(--topbar-height);
+  background: var(--bs-body-bg);
+  border-bottom: 1px solid var(--sidebar-border);
+}
+
+// ─── Main wrapper ─────────────────────────────────────────────────────────────
+.main-wrapper { min-width: 0; }
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+.search-results-frame {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  box-shadow: var(--bs-box-shadow);
+  z-index: 1000;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+// ─── Autocomplete ─────────────────────────────────────────────────────────────
+.autocomplete-item {
+  padding: .4rem .75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &:hover,
+  &[aria-selected="true"] {
+    background: var(--bs-primary-bg-subtle);
+  }
+}
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bs-primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: .75rem;
+  width: 2rem;
+  height: 2rem;
+
+  &-sm { width: 1.75rem; height: 1.75rem; font-size: .7rem; }
+}
+
+// ─── Notification dismiss animation ──────────────────────────────────────────
+@keyframes fade-out-right {
+  to { opacity: 0; transform: translateX(100%); }
+}
+.toast.hiding {
+  animation: fade-out-right .25s ease forwards;
+}
+
+// ─── Turbo Frame loading indicator ───────────────────────────────────────────
+turbo-frame[busy] {
+  opacity: .6;
+  pointer-events: none;
+  transition: opacity .15s;
+}
+
+// ─── Print ────────────────────────────────────────────────────────────────────
+@media print {
+  .sidebar, .topbar, .btn, .pagination { display: none !important; }
+  .main-wrapper { margin: 0 !important; }
+}
+
+// ─── Mobile ───────────────────────────────────────────────────────────────────
+@include bootstrap.media-breakpoint-down(lg) {
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 1040;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+
+    &.show { transform: translateX(0); }
+  }
+
+  body.sidebar-open::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 1039;
+  }
+}

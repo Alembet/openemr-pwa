@@ -1,0 +1,68 @@
+services:
+
+  mysql:
+    image: mariadb:11.8
+    restart: always
+    ports:
+      - "8321:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: openemr
+      MYSQL_USER: openemr
+      MYSQL_PASSWORD: openemr
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--su-mysql", "--connect", "--innodb_initialized"]
+      start_period: 45s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  php:
+    image: openemr/openemr:flex
+    restart: always
+    ports:
+      - "8301:80"
+      - "9301:443"
+    volumes:
+      - .:/var/www/localhost/htdocs/openemr-pwa:rw
+      # Re-use the main OpenEMR source as read-only base
+      - ../openemr:/var/www/localhost/htdocs/openemr:ro
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_ROOT_PASS: root
+      MYSQL_USER: openemr
+      MYSQL_PASS: openemr
+      OE_USER: admin
+      OE_PASS: pass
+      EASY_DEV_MODE: "yes"
+      OPENEMR_SETTING_language_default: "French (Standard)"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  node:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - "8311:80"
+    environment:
+      PMA_HOST: mysql
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  db_data: {}

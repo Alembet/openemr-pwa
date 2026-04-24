@@ -1,0 +1,71 @@
+{#
+  Main sidebar navigation.
+  Uses Stimulus `navigation` controller for active-state tracking.
+  Uses _hyperscript for trivial inline toggles.
+#}
+<nav class="sidebar__nav flex-grow-1 overflow-auto px-2"
+     data-controller="navigation"
+     data-navigation-active-url-value="{{ app.request.pathinfo }}">
+
+  {% set groups = [
+    {
+      key: 'clinical',
+      label: 'Clinique',
+      icon: 'bi-heart-pulse',
+      items: [
+        { href: '/dashboard',     icon: 'bi-speedometer2',   label: 'Tableau de bord' },
+        { href: '/patients',      icon: 'bi-people',         label: 'Patients' },
+        { href: '/calendar',      icon: 'bi-calendar3',      label: 'Agenda' },
+        { href: '/encounters',    icon: 'bi-clipboard2-pulse',label: 'Consultations' },
+        { href: '/prescriptions', icon: 'bi-capsule',        label: 'Ordonnances' },
+      ]
+    },
+    {
+      key: 'billing',
+      label: 'Facturation',
+      icon: 'bi-receipt',
+      items: [
+        { href: '/billing',   icon: 'bi-credit-card', label: 'Facturation' },
+        { href: '/reports',   icon: 'bi-bar-chart',   label: 'Rapports' },
+      ]
+    },
+    {
+      key: 'admin',
+      label: 'Administration',
+      icon: 'bi-gear',
+      items: [
+        { href: '/admin/users',    icon: 'bi-person-gear',  label: 'Utilisateurs' },
+        { href: '/admin/settings', icon: 'bi-sliders',      label: 'Paramètres' },
+        { href: '/admin/lang',     icon: 'bi-translate',    label: 'Traductions' },
+      ]
+    }
+  ] %}
+
+  {% for group in groups %}
+    <div class="nav-group mb-1">
+      <button type="button"
+              class="nav-group__toggle btn btn-link w-100 text-start px-2 py-1"
+              data-action="click->navigation#toggleGroup"
+              data-group-key="{{ group.key }}"
+              aria-expanded="true">
+        <i class="bi {{ group.icon }} me-2"></i>
+        <span class="sidebar__label">{{ group.label }}</span>
+        <i class="bi bi-chevron-down ms-auto sidebar__chevron"></i>
+      </button>
+      <ul class="nav flex-column nav-group__list show ps-3">
+        {% for item in group.items %}
+          <li class="nav-item">
+            <a class="nav-link px-2 py-1 rounded"
+               href="{{ item.href }}"
+               data-navigation-target="link"
+               data-turbo-frame="_top">
+              <i class="bi {{ item.icon }} me-2"></i>
+              <span class="sidebar__label">{{ item.label }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endfor %}
+
+</nav>
