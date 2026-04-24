@@ -5,12 +5,7 @@
   "license": "GPL-3.0-or-later",
   "require": {
     "php": "^8.2",
-    "twig/twig": "^3.22",
-    "laminas/laminas-diactoros": "^3.5",
-    "laminas/laminas-httphandlerrunner": "^2.12",
-    "league/route": "^5.1",
-    "psr/http-message": "^2.0",
-    "psr/http-server-middleware": "^1.0"
+    "twig/twig": "^3.22"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.0"
