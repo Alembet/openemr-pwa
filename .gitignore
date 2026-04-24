@@ -5,3 +5,5 @@ public/sw.js
 .env
 .env.local
 *.log
+storage/*.sqlite
+composer.lock
